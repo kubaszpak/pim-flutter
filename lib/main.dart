@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pim/gender.dart';
 import 'package:pim/results.dart';
 
 void main() {
@@ -31,8 +32,6 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-enum Gender { male, female }
-
 class _MyHomePageState extends State<MyHomePage> {
   final _formKey = GlobalKey<FormState>();
   final ageController = TextEditingController();
@@ -40,6 +39,8 @@ class _MyHomePageState extends State<MyHomePage> {
   final weightController = TextEditingController();
   Gender? _gender = Gender.male;
   double? _bmi;
+  String? _bodyType;
+  int? _age;
 
   @override
   void initState() {
@@ -171,13 +172,24 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                TextField(
+                TextFormField(
                   controller: ageController,
                   decoration: const InputDecoration(labelText: "Age"),
                   keyboardType: TextInputType.number,
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.digitsOnly
                   ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter some text';
+                    }
+                    return null;
+                  },
+                  onChanged: (String? value) {
+                    setState(() {
+                      _bmi = null;
+                    });
+                  },
                 ),
                 Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -191,6 +203,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             groupValue: _gender,
                             onChanged: (Gender? value) {
                               setState(() {
+                                _bmi = null;
                                 _gender = value;
                               });
                             },
@@ -205,6 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             groupValue: _gender,
                             onChanged: (Gender? value) {
                               setState(() {
+                                _bmi = null;
                                 _gender = value;
                               });
                             },
@@ -212,49 +226,86 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ),
                     ]),
-                TextField(
+                TextFormField(
                   controller: heightController,
                   decoration: const InputDecoration(labelText: "Height"),
                   keyboardType: TextInputType.number,
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.digitsOnly
                   ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter some text';
+                    }
+                    return null;
+                  },
+                  onChanged: (String? value) {
+                    setState(() {
+                      _bmi = null;
+                    });
+                  },
                 ),
-                TextField(
+                TextFormField(
                   controller: weightController,
                   decoration: const InputDecoration(labelText: "Weight"),
                   keyboardType: TextInputType.number,
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.digitsOnly
                   ],
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Validate returns true if the form is valid, or false otherwise.
-                    if (_formKey.currentState!.validate()) {
-                      // If the form is valid, display a snackbar. In the real world,
-                      // you'd often call a server or save the information in a database.
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(checkBodyType(
-                            int.parse(heightController.text),
-                            int.parse(weightController.text),
-                            int.parse(ageController.text),
-                            _gender!)),
-                      ));
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter some text';
                     }
+                    return null;
                   },
-                  child: const Text('Submit'),
+                  onChanged: (String? value) {
+                    setState(() {
+                      _bmi = null;
+                    });
+                  },
                 ),
-                if (_bmi != null)
+                Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Validate returns true if the form is valid, or false otherwise.
+                        if (_formKey.currentState!.validate()) {
+                          // If the form is valid, display a snackbar. In the real world,
+                          // you'd often call a server or save the information in a database.
+                          setState(() {
+                            _bodyType = checkBodyType(
+                                int.parse(heightController.text),
+                                int.parse(weightController.text),
+                                int.parse(ageController.text),
+                                _gender!);
+                            _age = int.parse(ageController.text);
+                          });
+                        }
+                      },
+                      child: const Text('Calculate'),
+                    )),
+                if (_bmi != null && _bodyType != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Text(
+                        "BMI = ${_bmi!.toStringAsFixed(2)} - $_bodyType",
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w600)),
+                  ),
+                if (_bmi != null && _bodyType != null)
                   ElevatedButton(
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => const Results(),
+                            builder: (context) => Results(
+                                bmi: _bmi!,
+                                bodyType: _bodyType!,
+                                age: _age!,
+                                gender: _gender!),
                           ),
                         );
                       },
-                      child: const Text('Check Results'))
+                      child: const Text('Inspect Results'))
               ],
             ),
           ),
